@@ -257,10 +257,10 @@ class EmacsYankCommand(sublime_plugin.TextCommand):
     if len(args) == 0:
       # no arguments means the command 
       # is being called directly
-      valueToYank = sublime.getClipboard()
+      valueToYank = sublime.get_clipboard()
     elif args[0] == "clipboard":
       # the user has chosen to yank windows clipboard.
-      valueToYank = sublime.getClipboard()
+      valueToYank = sublime.get_clipboard()
     else:
       # an argument means it's been called from 
       # the EmacsYankChoiceCommand

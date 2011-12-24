@@ -86,7 +86,9 @@ class Marks:
       end = max(s.end(), self.innerMarks[viewName])
       region = sublime.Region(start, end)
       return region
-    
+    else:
+      return view.sel()[0]
+
   def killMark(self, view):
     global marks
     region = self.selectMark(view)

@@ -268,9 +268,9 @@ class EmacsYankCommand(sublime_plugin.TextCommand):
       valueToYank = killRing.get(idx)
     
     for s in self.view.sel():
-      self.view.erase(s)
-      self.view.insert(s.begin(), valueToYank)
-            
+      self.view.erase(edit, s)
+      self.view.insert(edit, s.begin(), valueToYank)
+
     # once we've yanked, we definitely don't want to
     # reuse the old kill buffer
     killRing.LastKillPosition = -1

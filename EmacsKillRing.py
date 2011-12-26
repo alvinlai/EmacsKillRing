@@ -297,16 +297,12 @@ class EmacsKillToMarkCommand(EmacsSelectionCommand):
     global marks
     viewName = marks.viewIdentifier(self.view)
 
-    # HACK: Since I have mapped this to ctrl-w, only kill if a mark 
-    # is active, otherwise select word. This was done here since I 
-    # don't think it's possible to create a custom context.
-    # 
-    # If you don't like this behavior, just remove the if statement
-    # and keep the "marks.killMark(self.view)" line.
     if viewName in marks.innerMarks:
       marks.killMark(self.view)
     else:
-      self.view.run_command("expand_selection", {"to": "word"})
+      # Cut the whole line (so kill to mark works as "cut" when
+      # there is no mark)
+      self.view.run_command("cut")
 
 #
 # Kill between the current cursor and the mark

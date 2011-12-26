@@ -276,7 +276,11 @@ class EmacsYankCommand(sublime_plugin.TextCommand):
     # once we've yanked, we definitely don't want to
     # reuse the old kill buffer
     killRing.LastKillPosition = -1
-    
+
+    # Clear mark
+    marks.clearMark(self.view)
+
+
 #
 # Set a mark in the current view
 #
@@ -284,7 +288,7 @@ class EmacsSetMarkCommand(EmacsSelectionCommand):
   def run(self, edit, **args):
     global marks
     marks.setMark(self.view)
-            
+
 #
 # Kill between the current cursor and the mark
 #
@@ -311,6 +315,7 @@ class EmacsKillRingSaveCommand(EmacsSelectionCommand):
   def run(self, edit, **args):
     global marks
     marks.copyMark(self.view)
+    marks.clearMark(self.view)
 
 #
 # Remove any existing marks

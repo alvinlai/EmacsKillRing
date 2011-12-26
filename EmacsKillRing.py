@@ -60,7 +60,7 @@ class Marks:
     s = view.sel()[0]
     viewName = self.viewIdentifier(view)
     point = s.begin()
-    self.innerMarks[viewName] = s.begin()
+    self.innerMarks[viewName] = s.b
     sublime.status_message("Set mark at char %s in %s" % (point, viewName))
     
   def viewIdentifier(self, view):
@@ -74,9 +74,10 @@ class Marks:
     # on this buffer
     s = view.sel()[0]
     viewName = self.viewIdentifier(view)
-    view.erase_regions('set-mark-region')
     if viewName in self.innerMarks:
       del self.innerMarks[viewName]
+    view.sel().clear()
+    view.sel().add(sublime.Region(s.b, s.b))
     
   def selectMark(self, view):
     s = view.sel()[0]
@@ -165,7 +166,6 @@ def atEOF(view, point):
   nextChar = view.substr(point)
   return ord(nextChar) == 0
 
-  
 
 #
 # Kill Line
@@ -232,7 +232,7 @@ class EmacsKillRegionCommand(EmacsSelectionCommand):
     killRing.LastKillPosition = s.begin()
     killRing.append(self.view.substr(s))
     self.view.erase(edit, s)
-    
+
 #
 # Yank any clip from the kill ring
 # 
@@ -329,9 +329,18 @@ class EmacsMarkDetector(sublime_plugin.EventListener):
     sublime_plugin.EventListener.__init__(self, *args, **kwargs)
    
   def on_selection_modified(self, view):
-    point = view.sel()[0].end()
+    sel = view.sel()[0]
     viewName = marks.viewIdentifier(view)
-    if viewName in marks.innerMarks:
+    if viewName in marks.innerMarks and sel.a == sel.b:
       mark = marks.innerMarks[viewName]
-      view.add_regions('set-mark-region', [sublime.Region(mark, point)], 'string')
 
+  def on_activated(self, view):
+    self.last_view = view
+
+  def on_query_context(self, view, key, operator, operand, match_all):
+    # Sublime bug? why view is null?
+    if not view:
+      view = self.last_view
+    if key == "emacs_has_mark":
+      if operator == sublime.OP_EQUAL:
+        return operand == (marks.viewIdentifier(view) in marks.innerMarks)

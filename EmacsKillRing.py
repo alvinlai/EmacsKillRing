@@ -328,7 +328,13 @@ class EmacsMarkDetector(sublime_plugin.EventListener):
   global marks
   def __init__(self, *args, **kwargs):
     sublime_plugin.EventListener.__init__(self, *args, **kwargs)
-   
+
+  # When text is modified, we cancel the mark.
+  def on_modified(self, view):
+    viewName = marks.viewIdentifier(view)
+    if viewName in marks.innerMarks:
+      marks.clearMark(view)
+
   def on_selection_modified(self, view):
     sel = view.sel()[0]
     viewName = marks.viewIdentifier(view)

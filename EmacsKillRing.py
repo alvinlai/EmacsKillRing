@@ -1,6 +1,6 @@
 #
 # emacs-style killbuffer commands; kill, and yank
-# 
+#
 
 
 import sublime_plugin, sublime, re
@@ -10,40 +10,40 @@ import sublime_plugin, sublime, re
 #
 class KillRing:
   def __init__(self):
-    # constructs the killring, a list acting basically 
+    # constructs the killring, a list acting basically
     # as a stack. Items are added to it, and currently not removed.
     self.killRing = [""]
     # the last kill position remembers where the last kill happened; if
-    # the user moves the cursor or changes buffer, then killing starts a 
+    # the user moves the cursor or changes buffer, then killing starts a
     # new kill ring entry
     self.LastKillPosition = -1
-    
+
   def peek(self):
     # returns the top of the kill ring; what will
     # be inserted on a basic yank.
     return self.killRing[-1]
-    
+
   def new(self):
     # starts a new entry in the kill ring.
     self.killRing.append("")
-    
-    
+
+
   def append(self, content):
-    # appends killed data to the current entry. 
-    # Also updates the windows clipboard with 
+    # appends killed data to the current entry.
+    # Also updates the windows clipboard with
     # everything in this kill entry
     self.killRing[-1] = self.killRing[-1] + content
     sublime.set_clipboard(self.killRing[-1])
- 
+
   def choices(self):
-    # tuples of integers with kill-ring entries. 
+    # tuples of integers with kill-ring entries.
     # Used by the yank choice command
     choiceArr = []
     for i in range(1,len(self.killRing)):
       choiceArr.append( (i,self.killRing[i]) )
     choiceArr.append( ("clipboard", "Windows Clipboard: " + sublime.get_clipboard()))
     return choiceArr
-    
+
   def get(self, idx):
     # gets a numbered entry in the kill ring
     return self.killRing[idx]
@@ -54,7 +54,7 @@ class KillRing:
 class Marks:
   def __init__(self):
     self.innerMarks = {}
-    
+
   def setMark(self, view):
     self.clearMark(view)
     s = view.sel()[0]
@@ -62,13 +62,13 @@ class Marks:
     point = s.begin()
     self.innerMarks[viewName] = s.b
     sublime.status_message("Set mark at char %s in %s" % (point, viewName))
-    
+
   def viewIdentifier(self, view):
     id = view.file_name()
     if id == None:
       id = "<?unknown?>" # unlikely to be a filename
     return id
-    
+
   def clearMark(self, view):
     # if we've cut, we want to unset the mark
     # on this buffer
@@ -78,7 +78,7 @@ class Marks:
       del self.innerMarks[viewName]
     view.sel().clear()
     view.sel().add(sublime.Region(s.b, s.b))
-    
+
   def selectMark(self, view):
     s = view.sel()[0]
     viewName = self.viewIdentifier(view)
@@ -97,7 +97,7 @@ class Marks:
       view.sel().add(region)
       view.run_command("emacs_kill_region")
       self.clearMark(view)
-    
+
   def copyMark(self, view):
     global marks
     global killRing
@@ -106,10 +106,10 @@ class Marks:
     killRing.new()
     killRing.append(content)
     print content
-    self.clearMark(view)    
+    self.clearMark(view)
 
 #
-# Base class for Emacs selection commands. 
+# Base class for Emacs selection commands.
 #
 # Only enabled if there is exactly one selection.
 #
@@ -122,34 +122,34 @@ class EmacsSelectionCommand(sublime_plugin.TextCommand):
     if len(self.view.sel()) != 1:
       return False
     return True
-    
-  
+
+
 #
 # the global killring and mark collection
-#  
+#
 killRing = KillRing()
 marks = Marks()
 
 def expandSelectionForKill(view, begin, end):
-  """Returns a selection that will be cut; basically, 
+  """Returns a selection that will be cut; basically,
   the 'select what to kill next' command."""
-  
-  # the emacs kill-line command either cuts 
-  # until the end of the current line, or if 
-  # the cursor is already at the end of the 
-  # line, will kill the EOL character. Will 
+
+  # the emacs kill-line command either cuts
+  # until the end of the current line, or if
+  # the cursor is already at the end of the
+  # line, will kill the EOL character. Will
   # not do anything at EOF
-  
+
   if  atEOL(view, end):
     # select the EOL char
     selection = sublime.Region(begin, end+1)
     return selection
-    
+
   elif atEOF(view, end):
-    # at the end of file, do nothing; the 
+    # at the end of file, do nothing; the
     # selection is just the initial selection
     return sublime.Region(begin, end)
-    
+
   else:
     # mid-string -- extend to EOL
     current = end
@@ -171,30 +171,30 @@ def atEOF(view, point):
 # Kill Line
 #
 class EmacsKillLineCommand(EmacsSelectionCommand):
-        
+
   def isEnabled(self, edit, args):
     if EmacsSelectionCommand.isEnabled(self, edit, args) == False:
       return False
-      
+
     # if we are at the end of the file, we can't kill.
     s = self.view.sel()[0]
     charAfterPoint = self.view.substr(s.end())
     if ord(charAfterPoint) == 0:
       # EOF
       return False
-      
+
     return True
 
   def run(self, edit, **args):
     global killRing
 
     s = self.view.sel()[0]
-    
+
     if killRing.LastKillPosition != s.begin() or killRing.LastKillPosition != s.end():
-      # we've moved the cursor, meaning we can't 
+      # we've moved the cursor, meaning we can't
       # continue to use the same kill buffer
       killRing.new()
-       
+
     expanded = expandSelectionForKill(self.view, s.begin(), s.end())
     killRing.LastKillPosition = expanded.begin()
     killRing.append(self.view.substr(expanded))
@@ -205,37 +205,37 @@ class EmacsKillLineCommand(EmacsSelectionCommand):
 # Kill region
 #
 class EmacsKillRegionCommand(EmacsSelectionCommand):
-        
+
   def isEnabled(self, edit, args):
     if EmacsSelectionCommand.isEnabled(self, edit, args) == False:
       return False
-      
+
     # if we are at the end of the file, we can't kill.
     s = self.view.sel()[0]
     charAfterPoint = self.view.substr(s.end())
     if ord(charAfterPoint) == 0:
       # EOF
       return False
-      
+
     return True
 
   def run(self, edit, **args):
     global killRing
 
     s = self.view.sel()[0]
-    
+
     if killRing.LastKillPosition != s.begin() or killRing.LastKillPosition != s.end():
-      # we've moved the cursor, meaning we can't 
+      # we've moved the cursor, meaning we can't
       # continue to use the same kill buffer
       killRing.new()
-       
+
     killRing.LastKillPosition = s.begin()
     killRing.append(self.view.substr(s))
     self.view.erase(edit, s)
 
 #
 # Yank any clip from the kill ring
-# 
+#
 class EmacsYankChoiceCommand(sublime_plugin.TextCommand):
   def run(self, edit, **args):
     # choose from the yank-buffer using the quick panel
@@ -247,28 +247,28 @@ class EmacsYankChoiceCommand(sublime_plugin.TextCommand):
     #self.view.window().show_quick_panel("", "emacsYank", idx, names)
     sublime.status_message("NOT YET IMPLEMENTED")
 #
-# Yank the most recent kill, or 
-# if an argument is specified, 
+# Yank the most recent kill, or
+# if an argument is specified,
 # that numbered kill ring entry
 #
 class EmacsYankCommand(sublime_plugin.TextCommand):
- 
+
   def run(self, edit, **args):
     global killRing
-    
+
     if len(args) == 0:
-      # no arguments means the command 
+      # no arguments means the command
       # is being called directly
       valueToYank = sublime.get_clipboard()
     elif args[0] == "clipboard":
       # the user has chosen to yank windows clipboard.
       valueToYank = sublime.get_clipboard()
     else:
-      # an argument means it's been called from 
+      # an argument means it's been called from
       # the EmacsYankChoiceCommand
       idx = int(args[0])
       valueToYank = killRing.get(idx)
-    
+
     for s in self.view.sel():
       self.view.erase(edit, s)
       self.view.insert(edit, s.begin(), valueToYank)

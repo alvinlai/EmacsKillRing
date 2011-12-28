@@ -327,6 +327,7 @@ class CancelMarkCommand(EmacsSelectionCommand):
 class EmacsMarkDetector(sublime_plugin.EventListener):
   global marks
   def __init__(self, *args, **kwargs):
+    self.last_view = sublime.active_window().active_view()
     sublime_plugin.EventListener.__init__(self, *args, **kwargs)
 
   # When text is modified, we cancel the mark.

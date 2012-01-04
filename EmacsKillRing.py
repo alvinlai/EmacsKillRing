@@ -58,13 +58,12 @@ class Marks:
   def setMark(self, view):
     self.clearMark(view)
     s = view.sel()[0]
-    viewName = self.viewIdentifier(view)
+    viewId = self.viewIdentifier(view)
     point = s.begin()
-    self.innerMarks[viewName] = s.b
-    sublime.status_message("Set mark at char %s in %s" % (point, viewName))
+    self.innerMarks[viewId] = s.b
 
   def viewIdentifier(self, view):
-    id = view.file_name()
+    id = view.id()
     if id == None:
       id = "<?unknown?>" # unlikely to be a filename
     return id
@@ -73,25 +72,24 @@ class Marks:
     # if we've cut, we want to unset the mark
     # on this buffer
     s = view.sel()[0]
-    viewName = self.viewIdentifier(view)
-    if viewName in self.innerMarks:
-      del self.innerMarks[viewName]
+    viewId = self.viewIdentifier(view)
+    if viewId in self.innerMarks:
+      del self.innerMarks[viewId]
     view.sel().clear()
     view.sel().add(sublime.Region(s.b, s.b))
 
   def selectMark(self, view):
     s = view.sel()[0]
-    viewName = self.viewIdentifier(view)
-    if viewName in self.innerMarks:
-      start = min(s.begin(), self.innerMarks[viewName])
-      end = max(s.end(), self.innerMarks[viewName])
+    viewId = self.viewIdentifier(view)
+    if viewId in self.innerMarks:
+      start = min(s.begin(), self.innerMarks[viewId])
+      end = max(s.end(), self.innerMarks[viewId])
       region = sublime.Region(start, end)
       return region
     else:
       return view.sel()[0]
 
   def killMark(self, view):
-    global marks
     region = self.selectMark(view)
     if region:
       view.sel().add(region)
@@ -99,13 +97,11 @@ class Marks:
       self.clearMark(view)
 
   def copyMark(self, view):
-    global marks
     global killRing
     region = self.selectMark(view)
     content = view.substr(region)
     killRing.new()
     killRing.append(content)
-    print content
     self.clearMark(view)
 
 #
@@ -295,9 +291,9 @@ class EmacsSetMarkCommand(EmacsSelectionCommand):
 class EmacsKillToMarkCommand(EmacsSelectionCommand):
   def run(self, edit, **args):
     global marks
-    viewName = marks.viewIdentifier(self.view)
+    viewId = marks.viewIdentifier(self.view)
 
-    if viewName in marks.innerMarks:
+    if viewId in marks.innerMarks:
       marks.killMark(self.view)
     else:
       # Cut the whole line (so kill to mark works as "cut" when
@@ -332,15 +328,15 @@ class EmacsMarkDetector(sublime_plugin.EventListener):
 
   # When text is modified, we cancel the mark.
   def on_modified(self, view):
-    viewName = marks.viewIdentifier(view)
-    if viewName in marks.innerMarks:
+    viewId = marks.viewIdentifier(view)
+    if viewId in marks.innerMarks:
       marks.clearMark(view)
 
   def on_selection_modified(self, view):
     sel = view.sel()[0]
-    viewName = marks.viewIdentifier(view)
-    if viewName in marks.innerMarks and sel.a == sel.b:
-      mark = marks.innerMarks[viewName]
+    viewId = marks.viewIdentifier(view)
+    if viewId in marks.innerMarks and sel.a == sel.b:
+      mark = marks.innerMarks[viewId]
 
   def on_activated(self, view):
     self.last_view = view

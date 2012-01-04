@@ -323,7 +323,6 @@ class CancelMarkCommand(EmacsSelectionCommand):
 class EmacsMarkDetector(sublime_plugin.EventListener):
   global marks
   def __init__(self, *args, **kwargs):
-    self.last_view = sublime.active_window().active_view()
     sublime_plugin.EventListener.__init__(self, *args, **kwargs)
 
   # When text is modified, we cancel the mark.
@@ -338,13 +337,7 @@ class EmacsMarkDetector(sublime_plugin.EventListener):
     if viewId in marks.innerMarks and sel.a == sel.b:
       mark = marks.innerMarks[viewId]
 
-  def on_activated(self, view):
-    self.last_view = view
-
   def on_query_context(self, view, key, operator, operand, match_all):
-    # Sublime bug? why view is null?
-    if not view:
-      view = self.last_view
     if key == "emacs_has_mark":
       if operator == sublime.OP_EQUAL:
         return operand == (marks.viewIdentifier(view) in marks.innerMarks)

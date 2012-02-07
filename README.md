@@ -25,6 +25,20 @@ the new commands, like so:
     { "keys": ["alt+w"], "command": "emacs_kill_ring_save" },
     { "keys": ["ctrl+g"], "command": "cancel_mark" }
 
+    { "keys": ["ctrl+f"], "command": "move", "args": {"by": "characters", "forward": true} },
+	{ "keys": ["ctrl+f"], "command": "move", "args": {"by": "characters", "forward": true, "extend": true}, "context": 
+		[
+			{ "key": "emacs_has_mark", "operator": "equal", "operand": true }
+		]
+	},
+
+	{ "keys": ["ctrl+b"], "command": "move", "args": {"by": "characters", "forward": false} },	
+	{ "keys": ["ctrl+b"], "command": "move", "args": {"by": "characters", "forward": false, "extend": true}, "context":
+		[
+			{ "key": "emacs_has_mark", "operator": "equal", "operand": true }
+		]
+	},
+
 
 There is a small gotcha here: I have set up ctrl+w to select the current word,
 like in TextMate, but that doesn’t fit well with the default Emacs key bindings,

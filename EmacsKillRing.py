@@ -61,6 +61,7 @@ class Marks:
     viewId = self.viewIdentifier(view)
     point = s.begin()
     self.innerMarks[viewId] = s.b
+    #sublime.status_message("Set mark %s" % (point))
 
   def viewIdentifier(self, view):
     id = view.id()
@@ -80,11 +81,11 @@ class Marks:
 
   def selectMark(self, view):
     s = view.sel()[0]
-    viewId = self.viewIdentifier(view)
+    viewId = self.viewIdentifier(view)    
     if viewId in self.innerMarks:
       start = min(s.begin(), self.innerMarks[viewId])
       end = max(s.end(), self.innerMarks[viewId])
-      region = sublime.Region(start, end)
+      region = sublime.Region(start, end)      
       return region
     else:
       return view.sel()[0]
@@ -282,7 +283,7 @@ class EmacsYankCommand(sublime_plugin.TextCommand):
 #
 class EmacsSetMarkCommand(EmacsSelectionCommand):
   def run(self, edit, **args):
-    global marks
+    global marks        
     marks.setMark(self.view)
 
 #
@@ -326,7 +327,7 @@ class EmacsMarkDetector(sublime_plugin.EventListener):
     sublime_plugin.EventListener.__init__(self, *args, **kwargs)
 
   # When text is modified, we cancel the mark.
-  def on_modified(self, view):
+  def on_modified(self, view):    
     viewId = marks.viewIdentifier(view)
     if viewId in marks.innerMarks:
       marks.clearMark(view)
@@ -334,10 +335,14 @@ class EmacsMarkDetector(sublime_plugin.EventListener):
   def on_selection_modified(self, view):
     sel = view.sel()[0]
     viewId = marks.viewIdentifier(view)
-    if viewId in marks.innerMarks and sel.a == sel.b:
-      mark = marks.innerMarks[viewId]
-
-  def on_query_context(self, view, key, operator, operand, match_all):
+    if viewId in marks.innerMarks:
+      start = marks.innerMarks[viewId]
+      end = sel.b
+      #sublime.status_message("Selection mark %s %s" % (start, end))
+      region = sublime.Region(start, end)
+      view.sel().add(sublime.Region(start, end))
+      
+  def on_query_context(self, view, key, operator, operand, match_all):    
     if key == "emacs_has_mark":
       if operator == sublime.OP_EQUAL:
         return operand == (marks.viewIdentifier(view) in marks.innerMarks)
